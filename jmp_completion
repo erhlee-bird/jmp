@@ -1,0 +1,13 @@
+_jmp()
+{
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    local opts=$(jmp --complete ${prev} ${cur})
+#    local IFS=$'\n'
+
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+#    COMPREPLY=( $(printf "%q\n" "${COMPREPLY[@]}") )
+    return 0
+}
+complete -o filenames -o nospace -F _jmp jmp
+complete -o filenames -o nospace -F _jmp j

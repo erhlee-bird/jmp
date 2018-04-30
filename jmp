@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Allow our jmp.py script to change our working directory.
+function jmp {
+  jmpdir="$(dirname "$BASH_SOURCE")"
+  target=$(python3 "$jmpdir/src/jmp.py" "$@")
+  if [[ "$target" = "bash: "* ]]; then
+    cd "${target//bash: /}"
+  else
+    echo "$target"
+  fi
+}
