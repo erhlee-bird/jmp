@@ -58,4 +58,4 @@ jmp up2     # Path will now point to /home/user
 Storage
 -------
 
-Bookmarks are stored as pickle files in ="${HOME}/.jmp_pad/jmp_table.pkl"=.
+Bookmarks are stored as pickle files in "${HOME}/.jmp_pad/jmp_table.pkl".
