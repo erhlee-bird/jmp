@@ -12,8 +12,10 @@ Operates as a functional replacement for cd.
 Needs to be run as a shell function to properly change directories.
 """
 import argparse
-import pickle
+from contextlib import redirect_stdout
 import os
+import pickle
+import subprocess
 import sys
 
 # Use for upgrading outdated jmp entries.
@@ -149,7 +151,7 @@ class JmpBackend(object):
         self.store = store
         self.jmp_table = {}
 
-    def log(self, msg, debug=False):
+    def log(self, msg, debug=False, fd=sys.stdout):
         """
         @brief Print a message.
 
@@ -160,13 +162,13 @@ class JmpBackend(object):
         if self.SUPPRESS:
             return
         if not debug or self.LOG_DEBUG:
-            print(msg)
+            print(msg, file=fd)
 
     def debug(self, msg):
         """
         @brief Print a debug message.
         """
-        self.log(msg, debug=True)
+        self.log(msg, debug=True, fd=sys.stderr)
 
     def __enter__(self):
         self.load_table()
@@ -337,18 +339,45 @@ class JmpBackend(object):
         flags, target = self.get_flags(tag)
         path = self.expand(flags, target)
         if not os.path.isdir(path) and target not in special:
+            self.log("Tag {} points to an invalid path.".format(tag), fd=sys.stderr)
             if flags & self.TAG_FLAG and tag in self.jmp_table:
-                self.delete_jmp(tag)
+                with redirect_stdout(sys.stderr):
+                    if input("delete tag? (y/n): ").lower() == "y":
+                        self.delete_jmp(tag)
                 return False
-            self.log("Tag {} points to an invalid path.".format(tag))
             return False
         if flags & self.TAG_FLAG and tag in self.jmp_table:
             self.jmp_table[tag].used += 1
         self.log("bash: {}".format(path))
         return True
 
+    def git_fzf(self):
+        ret = subprocess.run(
+            "git rev-parse --show-toplevel",
+            check=False,
+            shell=True,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE
+        )
+        root_dir = None
+        if ret.returncode == 0:
+            root_dir = ret.stdout.decode().strip()
+
+        ret = subprocess.run(
+            "fzf",
+            check=False,
+            cwd=root_dir,
+            shell=True,
+            # NB: Need stderr to show selection menu.
+            # stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE
+        )
+        if ret.returncode == 0:
+            path = ret.stdout.decode().strip()
+            self.log("bash: {}".format(path))
+
     def default_action(self):
-        self.print_list()
+        self.git_fzf()
 
 
 def main():
