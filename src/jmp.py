@@ -364,7 +364,7 @@ class JmpBackend(object):
             root_dir = ret.stdout.decode().strip()
 
         ret = subprocess.run(
-            "fzf",
+            "fzf --exact",
             check=False,
             cwd=root_dir,
             shell=True,
