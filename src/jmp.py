@@ -359,9 +359,21 @@ class JmpBackend(object):
             stderr=subprocess.DEVNULL,
             stdout=subprocess.PIPE
         )
-        root_dir = None
+        root_dir = os.getcwd()
         if ret.returncode == 0:
             root_dir = ret.stdout.decode().strip()
+
+        # Get the relative path to the root_dir.
+        ret = subprocess.run(
+            f"realpath --relative-to=. {root_dir}",
+            check=False,
+            shell=True,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE
+        )
+        relative_path = ""
+        if ret.returncode == 0:
+            relative_path = ret.stdout.decode().strip()
 
         ret = subprocess.run(
             "fzf --exact",
@@ -374,7 +386,7 @@ class JmpBackend(object):
         )
         if ret.returncode == 0:
             path = ret.stdout.decode().strip()
-            self.log("bash: {}".format(path))
+            self.log("bash: {}".format("/".join([x for x in [relative_path, path] if x])))
 
     def default_action(self):
         self.git_fzf()
